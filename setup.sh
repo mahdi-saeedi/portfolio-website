@@ -1,8 +1,6 @@
 #!/bin/bash
 
 # Setup script for portfolio website
-# This script helps with initial setup and configuration
-
 set -e
 
 echo "╔═══════════════════════════════════════════════╗"
@@ -29,87 +27,111 @@ echo ""
 
 # Ask for environment
 echo "Choose your environment:"
-echo "1) Development"
-echo "2) Production"
+echo "1) Development (with hot reload)"
+echo "2) Production (optimized build)"
 read -p "Enter your choice (1 or 2): " env_choice
 
-# Set docker-compose file based on environment
 if [ "$env_choice" == "1" ]; then
     ENV_TYPE="development"
-    API_URL="http://localhost:3000"
-    # Update docker-compose to use dev Dockerfiles
-    sed -i.bak 's/dockerfile: Dockerfile$/dockerfile: Dockerfile.dev/g' docker-compose.yml
-    sed -i.bak 's/NODE_ENV: production/NODE_ENV: development/g' docker-compose.yml
-    sed -i.bak "s|VITE_API_URL:.*|VITE_API_URL: $API_URL|g" docker-compose.yml
+    COMPOSE_FILE="docker-compose.dev.yml"
+    
+    echo ""
+    echo "🐳 Setting up DEVELOPMENT environment..."
+    echo ""
+    
+    # Stop any running containers
+    echo "🛑 Stopping any existing containers..."
+    docker compose -f docker-compose.dev.yml down 2>/dev/null || true
+    
+    # Build and start services
+    echo "📦 Building Docker images..."
+    docker compose -f docker-compose.dev.yml build
+    
+    echo "🚀 Starting services..."
+    docker compose -f docker-compose.dev.yml up -d
+    
+    # Wait for services
+    echo "⏳ Waiting for services to be ready..."
+    sleep 15
+    
+    # Initialize database
+    echo "🗄️ Initializing database..."
+    docker compose -f docker-compose.dev.yml exec backend npm run init-db
+    
+    echo ""
+    echo "╔═══════════════════════════════════════════════╗"
+    echo "║                                               ║"
+    echo "║   🎉 DEVELOPMENT Setup Complete!              ║"
+    echo "║                                               ║"
+    echo "║   Frontend (Vite): http://localhost:5173      ║"
+    echo "║   Nginx Proxy: http://localhost:80            ║"
+    echo "║   Backend API: http://localhost:3000          ║"
+    echo "║   Database: localhost:5432                    ║"
+    echo "║                                               ║"
+    echo "║   Hot reload enabled for frontend & backend   ║"
+    echo "║                                               ║"
+    echo "║   View logs: docker compose -f $COMPOSE_FILE logs -f     ║"
+    echo "║   Stop: docker compose -f $COMPOSE_FILE down             ║"
+    echo "║                                               ║"
+    echo "╚═══════════════════════════════════════════════╝"
+    
 elif [ "$env_choice" == "2" ]; then
     ENV_TYPE="production"
-    API_URL="/api"
-    # Update docker-compose to use production Dockerfiles
-    sed -i.bak 's/dockerfile: Dockerfile.dev$/dockerfile: Dockerfile/g' docker-compose.yml
-    sed -i.bak 's/NODE_ENV: development/NODE_ENV: production/g' docker-compose.yml
-    sed -i.bak "s|VITE_API_URL:.*|VITE_API_URL: $API_URL|g" docker-compose.yml
+    COMPOSE_FILE="docker-compose.prod.yml"
+    
+    echo ""
+    echo "🐳 Setting up PRODUCTION environment..."
+    echo ""
+    
+    # Build frontend first
+    echo "📦 Building frontend for production..."
+    
+    # Use Docker to build frontend
+    echo "🏗️  Building frontend in Docker container..."
+    docker run --rm \
+        -v "$(pwd)/frontend:/app" \
+        -w /app \
+        -e VITE_API_URL=/api \
+        node:18-alpine \
+        sh -c "npm install && npm run build"
+    
+    # Stop any running containers
+    echo "🛑 Stopping any existing containers..."
+    docker compose -f docker-compose.prod.yml down 2>/dev/null || true
+    
+    # Build backend
+    echo "📦 Building backend Docker image..."
+    docker compose -f docker-compose.prod.yml build
+    
+    # Start services
+    echo "🚀 Starting services..."
+    docker compose -f docker-compose.prod.yml up -d
+    
+    # Wait for services
+    echo "⏳ Waiting for services to be ready..."
+    sleep 15
+    
+    # Initialize database
+    echo "🗄️ Initializing database..."
+    docker compose -f docker-compose.prod.yml exec backend npm run init-db
+    
+    echo ""
+    echo "╔═══════════════════════════════════════════════╗"
+    echo "║                                               ║"
+    echo "║   🎉 PRODUCTION Setup Complete!               ║"
+    echo "║                                               ║"
+    echo "║   Website: http://localhost:80                ║"
+    echo "║   Backend API: http://localhost:3000          ║"
+    echo "║   Database: localhost:5432                    ║"
+    echo "║                                               ║"
+    echo "║   Optimized build running!                    ║"
+    echo "║                                               ║"
+    echo "║   View logs: docker compose -f $COMPOSE_FILE logs -f     ║"
+    echo "║   Stop: docker compose -f $COMPOSE_FILE down             ║"
+    echo "║                                               ║"
+    echo "╚═══════════════════════════════════════════════╝"
+    
 else
     echo "❌ Invalid choice. Please run the script again."
     exit 1
 fi
-
-echo ""
-echo "🐳 Setting up with Docker ($ENV_TYPE)..."
-echo ""
-
-# For production, build frontend first
-if [ "$env_choice" == "2" ]; then
-    echo "📦 Building frontend for production..."
-    
-    # Check if npm is installed
-    if ! command -v npm &> /dev/null; then
-        echo "⚠️  npm not found locally. Building frontend inside Docker container instead..."
-        echo "🏗️  Creating temporary build container..."
-        
-        # Build frontend using Docker
-        docker run --rm \
-            -v "$(pwd)/frontend:/app" \
-            -w /app \
-            -e VITE_API_URL=/api \
-            node:18-alpine \
-            sh -c "npm install && npm run build"
-    else
-        cd frontend
-        npm install
-        VITE_API_URL=/api npm run build
-        cd ..
-    fi
-fi
-
-# Build Docker images
-echo "📦 Building Docker images..."
-docker compose build
-
-# Start services
-echo "🚀 Starting services..."
-docker compose up -d
-
-# Wait for database to be ready
-echo "⏳ Waiting for database to be ready..."
-sleep 10
-
-# Initialize database
-echo "🗄️ Initializing database..."
-docker compose exec -T backend npm run init-db
-
-# Clean up backup files
-rm -f docker-compose.yml.bak
-
-echo ""
-echo "╔═══════════════════════════════════════════════╗"
-echo "║                                               ║"
-echo "║   🎉 Setup complete! ($ENV_TYPE)              ║"
-echo "║                                               ║"
-echo "║   Frontend: http://localhost:80               ║"
-echo "║   Backend API: http://localhost:3000          ║"
-echo "║   Database: localhost:5432                    ║"
-echo "║                                               ║"
-echo "║   Run 'docker compose logs -f' to view logs   ║"
-echo "║   Run 'docker compose down' to stop           ║"
-echo "║                                               ║"
-echo "╚═══════════════════════════════════════════════╝"
