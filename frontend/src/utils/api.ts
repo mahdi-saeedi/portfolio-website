@@ -16,13 +16,13 @@ const api = axios.create({
 export const apiService = {
   // Fetch all projects
   getProjects: async (): Promise<Project[]> => {
-    const response = await api.get<Project[]>('/api/projects');
+    const response = await api.get<Project[]>('/projects');
     return response.data;
   },
 
   // Submit contact form
   submitContact: async (data: ContactForm): Promise<{ message: string }> => {
-    const response = await api.post<{ message: string }>('/api/contact', data);
+    const response = await api.post<{ message: string }>('/contact', data);
     return response.data;
   },
 };
