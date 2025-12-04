@@ -38,7 +38,7 @@ async function createServer(): Promise<FastifyInstance> {
   });
 
   // Health check endpoint
-  server.get('/health', async (request, reply) => {
+  server.get('/health', async () => {
     return { status: 'ok', timestamp: new Date().toISOString() };
   });
 
@@ -57,6 +57,7 @@ async function createServer(): Promise<FastifyInstance> {
 
   // Global error handler
   server.setErrorHandler((error, request, reply) => {
+    server.log.error(request.raw.url);
     server.log.error(error);
     reply.code(error.statusCode || 500).send({
       error: error.name || 'Internal Server Error',
