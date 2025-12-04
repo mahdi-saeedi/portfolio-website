@@ -57,6 +57,15 @@ echo ""
 echo "🐳 Setting up with Docker ($ENV_TYPE)..."
 echo ""
 
+# For production, build frontend first
+if [ "$env_choice" == "2" ]; then
+    echo "📦 Building frontend for production..."
+    cd frontend
+    npm install
+    VITE_API_URL=/api npm run build
+    cd ..
+fi
+
 # Build Docker images
 echo "📦 Building Docker images..."
 docker compose build
