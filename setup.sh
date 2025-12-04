@@ -60,10 +60,25 @@ echo ""
 # For production, build frontend first
 if [ "$env_choice" == "2" ]; then
     echo "📦 Building frontend for production..."
-    cd frontend
-    npm install
-    VITE_API_URL=/api npm run build
-    cd ..
+    
+    # Check if npm is installed
+    if ! command -v npm &> /dev/null; then
+        echo "⚠️  npm not found locally. Building frontend inside Docker container instead..."
+        echo "🏗️  Creating temporary build container..."
+        
+        # Build frontend using Docker
+        docker run --rm \
+            -v "$(pwd)/frontend:/app" \
+            -w /app \
+            -e VITE_API_URL=/api \
+            node:18-alpine \
+            sh -c "npm install && npm run build"
+    else
+        cd frontend
+        npm install
+        VITE_API_URL=/api npm run build
+        cd ..
+    fi
 fi
 
 # Build Docker images
