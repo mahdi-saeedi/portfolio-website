@@ -19,7 +19,7 @@ if ! command -v docker &> /dev/null; then
 fi
 
 # Check if Docker Compose is installed
-if ! command -v docker-compose &> /dev/null; then
+if ! command -v docker compose &> /dev/null; then
     echo "❌ Docker Compose is not installed. Please install Docker Compose first."
     exit 1
 fi
@@ -40,11 +40,11 @@ if [ "$choice" == "1" ]; then
     
     # Build Docker images
     echo "📦 Building Docker images..."
-    docker-compose build
+    docker compose build
     
     # Start services
     echo "🚀 Starting services..."
-    docker-compose up -d
+    docker compose up -d
     
     # Wait for database to be ready
     echo "⏳ Waiting for database to be ready..."
@@ -52,7 +52,7 @@ if [ "$choice" == "1" ]; then
     
     # Initialize database
     echo "🗄️ Initializing database..."
-    docker-compose exec -T backend npm run init-db
+    docker compose exec -T backend npm run init-db
     
     echo ""
     echo "╔═══════════════════════════════════════════════╗"
@@ -63,8 +63,8 @@ if [ "$choice" == "1" ]; then
     echo "║   Backend API: http://localhost:3000          ║"
     echo "║   Database: localhost:5432                    ║"
     echo "║                                               ║"
-    echo "║   Run 'docker-compose logs -f' to view logs   ║"
-    echo "║   Run 'docker-compose down' to stop           ║"
+    echo "║   Run 'docker compose logs -f' to view logs   ║"
+    echo "║   Run 'docker compose down' to stop           ║"
     echo "║                                               ║"
     echo "╚═══════════════════════════════════════════════╝"
     
