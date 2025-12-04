@@ -36,14 +36,18 @@ read -p "Enter your choice (1 or 2): " env_choice
 # Set docker-compose file based on environment
 if [ "$env_choice" == "1" ]; then
     ENV_TYPE="development"
+    API_URL="http://localhost:3000"
     # Update docker-compose to use dev Dockerfiles
     sed -i.bak 's/dockerfile: Dockerfile$/dockerfile: Dockerfile.dev/g' docker-compose.yml
     sed -i.bak 's/NODE_ENV: production/NODE_ENV: development/g' docker-compose.yml
+    sed -i.bak "s|VITE_API_URL:.*|VITE_API_URL: $API_URL|g" docker-compose.yml
 elif [ "$env_choice" == "2" ]; then
     ENV_TYPE="production"
+    API_URL="/api"
     # Update docker-compose to use production Dockerfiles
     sed -i.bak 's/dockerfile: Dockerfile.dev$/dockerfile: Dockerfile/g' docker-compose.yml
     sed -i.bak 's/NODE_ENV: development/NODE_ENV: production/g' docker-compose.yml
+    sed -i.bak "s|VITE_API_URL:.*|VITE_API_URL: $API_URL|g" docker-compose.yml
 else
     echo "❌ Invalid choice. Please run the script again."
     exit 1

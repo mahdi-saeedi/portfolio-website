@@ -47,10 +47,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
-    container_name: portfolio_frontend
-    restart: unless-stopped
-    environment:
-      VITE_API_URL: http://localhost:3000
+      args:
+        VITE_API_URL: http://localhost:3000
     ports:
       - "5173:5173"
     depends_on:
