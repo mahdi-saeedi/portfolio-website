@@ -16,12 +16,12 @@
     "@fastify/cors": "^8.4.2",
     "fastify": "^4.25.1",
     "pg": "^8.11.3",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "pino-pretty": "^10.3.1"
   },
   "devDependencies": {
     "@types/node": "^20.10.5",
     "@types/pg": "^8.10.9",
-    "pino-pretty": "^10.3.1",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   }
